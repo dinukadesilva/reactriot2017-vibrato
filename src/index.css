@@ -1,5 +1,10 @@
+html {
+  padding-right: 1px !important;
+  padding-left: 1px !important;
+}
+
 body {
   margin: 0;
   padding: 0;
-  font-family: sans-serif;
+  font-family: "Open Sans";
 }

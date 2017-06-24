@@ -1,6 +1,7 @@
 import React, {Component} from 'react';
 import logo from './logo.svg';
 import './App.css';
+import "box-layout"
 
 class App extends Component {
     constructor(props) {
@@ -143,8 +144,8 @@ class App extends Component {
     }
 
     onResize() {
-        var headerElm = document.getElementsByTagName("nav")[0];
-        document.body.style.paddingTop = headerElm.offsetHeight + "px";
+        /*var headerElm = document.getElementsByTagName("nav")[0];
+        document.body.style.paddingTop = headerElm.offsetHeight + "px";*/
 
         /*var containers = document.getElementsByClassName("course-content-item-preview");
         for (let i = 0; i < containers.length; i++) {
@@ -162,27 +163,25 @@ class App extends Component {
         window.state = this.state;
 
         return (
-            <div>
-                <nav className="navbar navbar-toggleable-md navbar-inverse bg-inverse fixed-top">
-                    <a className="navbar-brand" href="#">Vibrato</a>
-                </nav>
-
-                <div className="container">
-                    {(() => {
-                        if (this.state.root.length && this.state.root.length > 0) {
-                            return <div className="row">
-                                <ul className="col-sm-3 course-content-list">
+            <div className="box wrap-parent wrap-parent-height no-padding">
+                {(() => {
+                    if (this.state.root.length && this.state.root.length > 0) {
+                        return <div className="box wrap-parent wrap-parent-height no-padding">
+                            <div className="box wrap-parent-height no-padding side-nav">
+                                <ul className="box wrap-parent wrap-parent-height course-content-list">
                                     {this.state.root.map((rootId) => {
                                         if (this.state.files[rootId] && this.state.files[rootId].children) {
                                             return this.state.files[rootId].children.map((childId) => {
                                                 const childFile = this.state.files[childId];
-                                                return <li key={"child_" + childId} className="course-content-item">
+                                                const statusClassName = this.state.activeFile == childId ? " active" : "";
+                                                return <li key={"child_" + childId}
+                                                           className={"box wrap-parent course-content-item" + statusClassName}>
 
                                                     <img src={childFile.iconLink}
-                                                         className="course-content-item-icon"/>
+                                                         className="box course-content-item-icon"/>
                                                     <a href="#"
                                                        onClick={this.setActiveFile.bind(this, childFile.id)}
-                                                       className="course-content-item-title">
+                                                       className="box course-content-item-title">
                                                         {childFile.title}
                                                     </a>
                                                 </li>
@@ -192,28 +191,30 @@ class App extends Component {
                                         }
                                     })}
                                 </ul>
-                                <div className="col-sm-9 course-content-item-preview">
-                                    {(() => {
-                                        if (this.state.activeFile) {
-                                            const file = this.state.files[this.state.activeFile];
-                                            return <iframe className="col-sm-12" src={file.embedLink + "?autoplay=1"}></iframe>
-                                        }
-                                    })()}
-                                </div>
                             </div>
-                        } else {
-                            return <div className="row">
-                                <div className="col-lg-12 create-new">
-                                    <p> Start creating a course by picking files from google drive</p>
-                                    <button onClick={this.openNewFolder.bind(this)}
-                                            className="btn btn-outline-success my-2 my-sm-0">
-                                        Create New
-                                    </button>
-                                </div>
+                            <div className="box wrap-parent-height course-content-item-preview no-padding">
+                                {(() => {
+                                    if (this.state.activeFile) {
+                                        const file = this.state.files[this.state.activeFile];
+                                        return <iframe className="box wrap-parent wrap-parent-height no-padding"
+                                                       src={file.embedLink + "?autoplay=1"}>
+                                        </iframe>
+                                    }
+                                })()}
                             </div>
-                        }
-                    })()}
-                </div>
+                        </div>
+                    } else {
+                        return <div className="box wrap-parent">
+                            <div className="box wrap-parent create-new">
+                                <p> Start creating a course by picking files from google drive</p>
+                                <button onClick={this.openNewFolder.bind(this)}
+                                        className="btn btn-outline-success my-2 my-sm-0">
+                                    Create New
+                                </button>
+                            </div>
+                        </div>
+                    }
+                })()}
             </div>
         );
     }
