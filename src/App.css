@@ -1,0 +1,35 @@
+ul.course-content-list {
+    list-style: none;
+    padding: 0px;
+}
+
+li.course-content-item {
+    border-bottom: 1px solid rgba(41, 43, 44, 0.06);
+}
+
+li.course-content-item.active {
+    background-color: rgba(41, 43, 44, 0.04);
+    border-left: 4px solid rgba(41, 43, 44, 0.2);
+}
+
+img.course-content-item-icon {
+    padding: 10px;
+}
+
+a.course-content-item-title {
+    padding: 10px;
+    color: rgba(41, 43, 44, 0.48);
+}
+
+iframe {
+    height: 100%;
+    border: none;
+    padding: 0px;
+    min-height: 500px;
+}
+
+.create-new {
+    color: #4CAF50;
+    padding-top: 50px;
+    text-align: center;
+}

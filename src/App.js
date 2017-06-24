@@ -3,6 +3,75 @@ import logo from './logo.svg';
 import './App.css';
 
 class App extends Component {
+    constructor(props) {
+        super(props);
+
+        this.loadFilesMeta = this.loadFilesMeta.bind(this);
+        this.loadChildren = this.loadChildren.bind(this);
+        this.setActiveFile = this.setActiveFile.bind(this);
+
+        this.state = {
+            activeFile: null,
+            sourceRoot: [],
+            root: [],
+            files: {}
+        };
+    }
+
+    setActiveFile(fileId) {
+        this.setState((prevState) => {
+            prevState.activeFile = fileId;
+            return prevState;
+        });
+    }
+
+    loadFilesMeta(file) {
+        window.gapi.load('client', () => {
+            window.gapi.client.request({
+                'path': '/drive/v2/files/' + file.id,
+                'method': 'GET',
+                callback: (response) => {
+                    this.setState((prevState) => {
+                        if (!prevState.files[file.id]) {
+                            prevState.files[file.id] = {};
+                        }
+                        prevState.files[file.id] = Object.assign(prevState.files[file.id], response);
+                        return prevState;
+                    });
+                }
+            });
+        });
+    }
+
+    loadChildren(file) {
+        window.gapi.load('client', () => {
+            window.gapi.client.request({
+                'path': '/drive/v2/files/' + file.id + '/children',
+                'method': 'GET',
+                callback: (response) => {
+                    response.items.filter((item) => {
+                        this.setState((prevState) => {
+                            if (!prevState.files[item.id]) {
+                                prevState.files[item.id] = {};
+                            }
+                            prevState.files[item.id] = Object.assign(prevState.files[item.id], item);
+
+                            if (!prevState.files[file.id]) {
+                                prevState.files[file.id] = {};
+                            }
+                            if (!prevState.files[file.id].children) {
+                                prevState.files[file.id].children = [];
+                            }
+                            prevState.files[file.id].children = prevState.files[file.id].children.concat([item.id]);
+
+                            return prevState;
+                        });
+                        this.loadFilesMeta(item);
+                    });
+                }
+            });
+        });
+    }
 
     openNewFolder() {
         var config = {
@@ -19,21 +88,15 @@ class App extends Component {
         };
 
         openFilePicker((response) => {
-            const selectedFile = response.docs[0];
-            window.gapi.load('client', function() {
-                window.gapi.client.request({
-                    'path': '/drive/v2/files/' + selectedFile.id + '/children',
-                    'method': 'GET',
-                    callback: function (response) {
-                        window.gapi.client.request({
-                            'path': '/drive/v2/files/' + selectedFile.id,
-                            'method': 'GET',
-                            callback: function (responsejs) {
-                            }
-                        });
-                    }
+            if (response.docs) {
+                const selectedFile = response.docs[0];
+                this.loadFilesMeta(selectedFile);
+                this.loadChildren(selectedFile);
+                this.setState((prevState) => {
+                    prevState.sourceRoot = [selectedFile.id];
+                    prevState.root = [selectedFile.id];
                 });
-            })
+            }
         }, config);
 
         function googleApiAuthLoad(callback, config) {
@@ -60,7 +123,7 @@ class App extends Component {
                 googleDrivePickerLoad(() => {
                     var docsView = new window.google.picker.DocsView()
                         .setIncludeFolders(true)
-                        .setMimeTypes('application/vnd.google-apps.folder')
+                        //.setMimeTypes('application/vnd.google-apps.folder')
                         .setSelectFolderEnabled(true);
 
 
@@ -79,58 +142,77 @@ class App extends Component {
         }
     }
 
+    onResize() {
+        var headerElm = document.getElementsByTagName("nav")[0];
+        document.body.style.paddingTop = headerElm.offsetHeight + "px";
+
+        /*var containers = document.getElementsByClassName("course-content-item-preview");
+        for (let i = 0; i < containers.length; i++) {
+            containers[i].style.minHeight = (window.innerHeight - headerElm.offsetHeight) + "px";
+        }*/
+    }
+
+    componentDidMount() {
+        window.onresize = this.onResize;
+        window.onload = this.onResize;
+    }
+
     render() {
+        //TODO remove
+        window.state = this.state;
+
         return (
             <div>
                 <nav className="navbar navbar-toggleable-md navbar-inverse bg-inverse fixed-top">
-                    <button className="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse"
-                            data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault"
-                            aria-expanded="false"
-                            aria-label="Toggle navigation">
-                        <span className="navbar-toggler-icon"></span>
-                    </button>
                     <a className="navbar-brand" href="#">Vibrato</a>
-
-                    <div className="collapse navbar-collapse" id="navbarsExampleDefault">
-                        <ul className="navbar-nav mr-auto">
-                            <li className="nav-item active">
-                                <a className="nav-link" href="#">Home <span className="sr-only">(current)</span></a>
-                            </li>
-                            <li className="nav-item">
-                                <a className="nav-link" href="#">Link</a>
-                            </li>
-                            <li className="nav-item">
-                                <a className="nav-link disabled" href="#">Disabled</a>
-                            </li>
-                            <li className="nav-item dropdown">
-                                <a className="nav-link dropdown-toggle" href="http://example.com" id="dropdown01"
-                                   data-toggle="dropdown"
-                                   aria-haspopup="true" aria-expanded="false">Dropdown</a>
-                                <div className="dropdown-menu" aria-labelledby="dropdown01">
-                                    <a className="dropdown-item" href="#">Action</a>
-                                    <a className="dropdown-item" href="#">Another action</a>
-                                    <a className="dropdown-item" href="#">Something else here</a>
-                                </div>
-                            </li>
-                        </ul>
-                        <form className="form-inline my-2 my-lg-0">
-                            <input className="form-control mr-sm-2" type="text" placeholder="Search"/>
-                            <button className="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
-                        </form>
-                    </div>
                 </nav>
 
                 <div className="container">
+                    {(() => {
+                        if (this.state.root.length && this.state.root.length > 0) {
+                            return <div className="row">
+                                <ul className="col-sm-3 course-content-list">
+                                    {this.state.root.map((rootId) => {
+                                        if (this.state.files[rootId] && this.state.files[rootId].children) {
+                                            return this.state.files[rootId].children.map((childId) => {
+                                                const childFile = this.state.files[childId];
+                                                return <li key={"child_" + childId} className="course-content-item">
 
-                    <div className="starter-template">
-                        <h1>Bootstrap starter template</h1>
-                        <p className="lead">Use this document as a way to quickly start any new project.<br /> All you
-                            get is
-                            this text and a
-                            mostly barebones HTML document.</p>
-                        <button onClick={this.openNewFolder.bind(this)}>Click</button>
-                    </div>
-
+                                                    <img src={childFile.iconLink}
+                                                         className="course-content-item-icon"/>
+                                                    <a href="#"
+                                                       onClick={this.setActiveFile.bind(this, childFile.id)}
+                                                       className="course-content-item-title">
+                                                        {childFile.title}
+                                                    </a>
+                                                </li>
+                                            });
+                                        } else {
+                                            return [];
+                                        }
+                                    })}
+                                </ul>
+                                <div className="col-sm-9 course-content-item-preview">
+                                    {(() => {
+                                        if (this.state.activeFile) {
+                                            const file = this.state.files[this.state.activeFile];
+                                            return <iframe className="col-sm-12" src={file.embedLink + "?autoplay=1"}></iframe>
+                                        }
+                                    })()}
+                                </div>
+                            </div>
+                        } else {
+                            return <div className="row">
+                                <div className="col-lg-12 create-new">
+                                    <p> Start creating a course by picking files from google drive</p>
+                                    <button onClick={this.openNewFolder.bind(this)}
+                                            className="btn btn-outline-success my-2 my-sm-0">
+                                        Create New
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    })()}
                 </div>
             </div>
         );
