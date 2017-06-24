@@ -1,6 +1,8 @@
 ul.course-content-list {
     list-style: none;
     padding: 0px;
+    margin: 0px;
+    overflow: auto;
 }
 
 li.course-content-item {
@@ -33,3 +35,12 @@ iframe {
     padding-top: 50px;
     text-align: center;
 }
+
+.side-nav {
+    width: 30%;
+}
+
+.course-content-item-preview {
+    width: 70%;
+}
+
