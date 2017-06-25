@@ -1,5 +1,7 @@
 # Vibrato
-An Open platform for learning with the use of google drive as the storage and file management utility.
+An Open platform for sharing drive contents as a course or a page. This might be useful for easy converting a drive folder into a course that can be quickly shared among students.
+
+
 
 
 # Demo
