@@ -13,7 +13,8 @@ var config = {
         "https://www.googleapis.com/auth/drive.install"
     ],
     appId: "727711806389",
-    developerKey: "AIzaSyAX8H3vvauMKO3xvozJg5gOd1qT2_wGaFI"
+    developerKey: "AIzaSyAX8H3vvauMKO3xvozJg5gOd1qT2_wGaFI",
+    apiKey: "AIzaSyAX8H3vvauMKO3xvozJg5gOd1qT2_wGaFI"
 };
 
 class App extends Component {
@@ -24,12 +25,35 @@ class App extends Component {
         this.loadChildren = this.loadChildren.bind(this);
         this.setActiveFile = this.setActiveFile.bind(this);
 
+
+
+
         this.state = {
             activeFile: null,
-            sourceRoot: [],
-            root: [],
+            sourceRoot: this.getSourceRootFromUrl(),
+            root: this.getSourceRootFromUrl(),
             files: {}
         };
+
+        if (this.getSourceRootFromUrl().length > 0) {
+            this.googleApiAuthLoad(() => {
+                this.getSourceRootFromUrl().filter((fileId) => {
+                    this.loadFilesMeta(fileId);
+                    this.loadChildren(fileId);
+                });
+            }, config);
+        }
+    }
+
+    getSourceRootFromUrl() {
+        var params = new URLSearchParams(window.location.search.slice(1));
+        let sourceParam = params.get("i");
+        if (!sourceParam) {
+            return [];
+        } else {
+            sourceParam = window.decodeURIComponent(sourceParam);
+            return sourceParam.split(",");
+        }
     }
 
     setActiveFile(fileId) {
@@ -39,17 +63,17 @@ class App extends Component {
         });
     }
 
-    loadFilesMeta(file) {
+    loadFilesMeta(fileId) {
         window.gapi.load('client', () => {
             window.gapi.client.request({
-                'path': '/drive/v2/files/' + file.id,
+                'path': '/drive/v2/files/' + fileId,
                 'method': 'GET',
                 callback: (response) => {
                     this.setState((prevState) => {
-                        if (!prevState.files[file.id]) {
-                            prevState.files[file.id] = {};
+                        if (!prevState.files[fileId]) {
+                            prevState.files[fileId] = {};
                         }
-                        prevState.files[file.id] = Object.assign(prevState.files[file.id], response);
+                        prevState.files[fileId] = Object.assign(prevState.files[fileId], response);
                         return prevState;
                     });
                 }
@@ -57,10 +81,10 @@ class App extends Component {
         });
     }
 
-    loadChildren(file) {
+    loadChildren(fileId) {
         window.gapi.load('client', () => {
             window.gapi.client.request({
-                'path': '/drive/v2/files/' + file.id + '/children',
+                'path': '/drive/v2/files/' + fileId + '/children',
                 'method': 'GET',
                 callback: (response) => {
                     response.items.filter((item) => {
@@ -70,17 +94,17 @@ class App extends Component {
                             }
                             prevState.files[item.id] = Object.assign(prevState.files[item.id], item);
 
-                            if (!prevState.files[file.id]) {
-                                prevState.files[file.id] = {};
+                            if (!prevState.files[fileId]) {
+                                prevState.files[fileId] = {};
                             }
-                            if (!prevState.files[file.id].children) {
-                                prevState.files[file.id].children = [];
+                            if (!prevState.files[fileId].children) {
+                                prevState.files[fileId].children = [];
                             }
-                            prevState.files[file.id].children = prevState.files[file.id].children.concat([item.id]);
+                            prevState.files[fileId].children = prevState.files[fileId].children.concat([item.id]);
 
                             return prevState;
                         });
-                        this.loadFilesMeta(item);
+                        this.loadFilesMeta(item.id);
                     });
                 }
             });
@@ -109,12 +133,11 @@ class App extends Component {
         this.openFilePicker((response) => {
             if (response.docs) {
                 const selectedFile = response.docs[0];
-                this.loadFilesMeta(selectedFile);
-                this.loadChildren(selectedFile);
-                this.setState((prevState) => {
+                window.location = window.location.origin + window.location.pathname + "?i=" + window.encodeURIComponent([selectedFile.id]);
+                /*this.setState((prevState) => {
                     prevState.sourceRoot = [selectedFile.id];
                     prevState.root = [selectedFile.id];
-                });
+                });*/
             }
         }, config);
     }
