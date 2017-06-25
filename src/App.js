@@ -1,7 +1,20 @@
 import React, {Component} from 'react';
-import logo from './logo.svg';
+import Sample from './Capture.PNG';
 import './App.css';
 import "box-layout"
+
+var config = {
+    clientId: "727711806389-rgpnchek1ttqr2km79a6vreqakfv58o8.apps.googleusercontent.com",
+    scope: [
+        "https://www.googleapis.com/auth/drive.file",
+        "https://www.googleapis.com/auth/drive.readonly",
+        "https://www.googleapis.com/auth/userinfo.email",
+        "https://www.googleapis.com/auth/userinfo.profile",
+        "https://www.googleapis.com/auth/drive.install"
+    ],
+    appId: "727711806389",
+    developerKey: "AIzaSyAX8H3vvauMKO3xvozJg5gOd1qT2_wGaFI"
+};
 
 class App extends Component {
     constructor(props) {
@@ -74,21 +87,26 @@ class App extends Component {
         });
     }
 
-    openNewFolder() {
-        var config = {
-            clientId: "727711806389-rgpnchek1ttqr2km79a6vreqakfv58o8.apps.googleusercontent.com",
-            scope: [
-                "https://www.googleapis.com/auth/drive.file",
-                "https://www.googleapis.com/auth/drive.readonly",
-                "https://www.googleapis.com/auth/userinfo.email",
-                "https://www.googleapis.com/auth/userinfo.profile",
-                "https://www.googleapis.com/auth/drive.install"
-            ],
-            appId: "727711806389",
-            developerKey: "AIzaSyAX8H3vvauMKO3xvozJg5gOd1qT2_wGaFI"
-        };
+    googleApiAuthLoad(callback, config) {
+        window.gapi.load('auth', {
+            'callback': function () {
+                window.gapi.auth.authorize({
+                    'client_id': config.clientId,
+                    'scope': config.scope,
+                    'immediate': false
+                }, callback);
+            }
+        });
+    };
 
-        openFilePicker((response) => {
+    googleDrivePickerLoad(callback, config) {
+        window.gapi.load('picker', {
+            'callback': callback
+        });
+    }
+
+    openNewFolder() {
+        this.openFilePicker((response) => {
             if (response.docs) {
                 const selectedFile = response.docs[0];
                 this.loadFilesMeta(selectedFile);
@@ -99,58 +117,40 @@ class App extends Component {
                 });
             }
         }, config);
+    }
 
-        function googleApiAuthLoad(callback, config) {
-            window.gapi.load('auth', {
-                'callback': function () {
-                    window.gapi.auth.authorize({
-                        'client_id': config.clientId,
-                        'scope': config.scope,
-                        'immediate': false
-                    }, callback);
-                }
+    openFilePicker(callback, config) {
+        this.googleApiAuthLoad((authResult) => {
+            var oauthToken = authResult.access_token;
+            this.googleDrivePickerLoad(() => {
+                var docsView = new window.google.picker.DocsView()
+                    .setIncludeFolders(true)
+                    //.setMimeTypes('application/vnd.google-apps.folder')
+                    .setSelectFolderEnabled(true);
+
+
+                var picker = new window.google.picker.PickerBuilder()
+                    .enableFeature(window.google.picker.Feature.MULTISELECT_ENABLED)
+                    .addView(docsView)
+                    .setCallback(callback)
+                    .setAppId(config.appId)
+                    .setOAuthToken(oauthToken)
+                    .setDeveloperKey(config.developerKey)
+                    .build();
+
+                picker.setVisible(true);
             });
-        };
-
-        function googleDrivePickerLoad(callback, config) {
-            window.gapi.load('picker', {
-                'callback': callback
-            });
-        }
-
-        function openFilePicker(callback, config) {
-            googleApiAuthLoad((authResult) => {
-                var oauthToken = authResult.access_token;
-                googleDrivePickerLoad(() => {
-                    var docsView = new window.google.picker.DocsView()
-                        .setIncludeFolders(true)
-                        //.setMimeTypes('application/vnd.google-apps.folder')
-                        .setSelectFolderEnabled(true);
-
-
-                    var picker = new window.google.picker.PickerBuilder()
-                        .enableFeature(window.google.picker.Feature.MULTISELECT_ENABLED)
-                        .addView(docsView)
-                        .setCallback(callback)
-                        .setAppId(config.appId)
-                        .setOAuthToken(oauthToken)
-                        .setDeveloperKey(config.developerKey)
-                        .build();
-
-                    picker.setVisible(true);
-                });
-            }, config);
-        }
+        }, config);
     }
 
     onResize() {
-        /*var headerElm = document.getElementsByTagName("nav")[0];
-        document.body.style.paddingTop = headerElm.offsetHeight + "px";*/
+        var headerElm = document.getElementsByClassName("header")[0];
+        document.body.style.paddingTop = headerElm.offsetHeight + "px";
 
         /*var containers = document.getElementsByClassName("course-content-item-preview");
-        for (let i = 0; i < containers.length; i++) {
-            containers[i].style.minHeight = (window.innerHeight - headerElm.offsetHeight) + "px";
-        }*/
+         for (let i = 0; i < containers.length; i++) {
+         containers[i].style.minHeight = (window.innerHeight - headerElm.offsetHeight) + "px";
+         }*/
     }
 
     componentDidMount() {
@@ -164,6 +164,9 @@ class App extends Component {
 
         return (
             <div className="box wrap-parent wrap-parent-height no-padding">
+                <div className="box wrap-parent header">
+                    <a href="#" className="box header-title">Vibrato</a>
+                </div>
                 {(() => {
                     if (this.state.root.length && this.state.root.length > 0) {
                         return <div className="box wrap-parent wrap-parent-height no-padding">
@@ -208,9 +211,11 @@ class App extends Component {
                             <div className="box wrap-parent create-new">
                                 <p> Start creating a course by picking files from google drive</p>
                                 <button onClick={this.openNewFolder.bind(this)}
-                                        className="btn btn-outline-success my-2 my-sm-0">
+                                        className="btn">
                                     Create New
                                 </button>
+                                <div className="box wrap-parent"></div>
+                                <img className="box wrap-parent demo-img" src={Sample}/>
                             </div>
                         </div>
                     }
