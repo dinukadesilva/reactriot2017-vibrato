@@ -179,6 +179,7 @@ class App extends Component {
     componentDidMount() {
         window.onresize = this.onResize;
         window.onload = this.onResize;
+        window.HACKBIT_VOTING_WIDGET.render(document.getElementById("voting-banner"));
     }
 
     render() {
@@ -188,7 +189,10 @@ class App extends Component {
         return (
             <div className="box wrap-parent wrap-parent-height no-padding">
                 <div className="box wrap-parent header">
-                    <a href="#" className="box header-title">Vibrato</a>
+                    <div className="box wrap-parent no-padding" id="voting-banner"></div>
+                    <div className="box wrap-parent no-padding header-content">
+                        <a href="#" className="box header-title">Vibrato</a>
+                    </div>
                 </div>
                 {(() => {
                     if (this.state.root.length && this.state.root.length > 0) {
